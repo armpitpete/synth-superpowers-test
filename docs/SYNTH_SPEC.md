@@ -16,12 +16,12 @@ Do not use Korg, miniKORG, or 700S as the final product name unless the project 
 
 ## Design goal
 
-Build a compact polyphonic browser synth that captures the core experience of a 700S-style instrument while allowing simple chords and held intervals from the beginning.
+Build a compact 4-voice polyphonic browser synth that captures the core experience of a 700S-style instrument while allowing simple chords and held intervals from the beginning.
 
 Core experience:
 
 - immediate playable sound
-- polyphonic note handling from v0.1
+- 4-voice polyphonic note handling from v0.1
 - simple controls
 - raw oscillator tone
 - useful lead, bass, interval, and chord sounds
@@ -39,8 +39,8 @@ Important correction: the original-inspired reference is monophonic, but this pr
 
 1. Build the voice before building the interface fully.
 2. Add one feature at a time.
-3. Support polyphonic note handling from v0.1.
-4. Keep the first polyphonic implementation small: limited voices, simple allocation, safe gain.
+3. Support 4-voice polyphonic note handling from v0.1.
+4. Keep the first polyphonic implementation small: fixed 4-voice limit, simple allocation, safe gain.
 5. Avoid modern synth bloat.
 6. Do not add presets until the instrument has a character worth saving.
 7. Every version must have one audible proof.
@@ -64,34 +64,34 @@ The original-inspired design is based on these behaviours:
 
 Project-specific extension:
 
-- polyphonic voice allocation from the first implementation slice
-- several notes can sound together, but voice count must stay limited until gain safety and release behaviour are proven
+- 4-voice polyphonic voice allocation from the first implementation slice
+- up to four notes can sound together, with gain safety and clean note release required from the start
 
 ## What we will implement first
 
-### v0.1 — First polyphonic tone
+### v0.1 — First 4-voice polyphonic tone
 
-Purpose: prove that the app can make several safe, playable, raw synth notes at the same time.
+Purpose: prove that the app can make up to four safe, playable, raw synth notes at the same time.
 
 Scope:
 
 - browser app loads
 - audio unlock works
-- limited polyphony works
-- several notes can play at once
+- 4-voice polyphony works
+- up to four notes can play at once
 - each note gets its own oscillator voice
 - safe master gain
 - one oscillator per voice
 - one waveform at first
 - one basic tone control shared across voices
 - notes can stop cleanly
-- simple voice limit to avoid uncontrolled stacking
+- fixed 4-voice limit to avoid uncontrolled stacking
 
 Do not build the whole 700S-style instrument in v0.1.
 
 Good enough:
 
-> Press or hold several keys/buttons, hear more than one raw synth note at once, change their brightness with one shared tone control, release them safely.
+> Press or hold up to four keys/buttons, hear more than one raw synth note at once, change their brightness with one shared tone control, release them safely.
 
 ## What we deliberately postpone
 
@@ -113,13 +113,13 @@ Do not add these in v0.1:
 - plugin export
 - visual replica of the original hardware
 - complex voice stealing modes
-- high voice counts
+- more than four voices
 
 ## Planned version path
 
 | Version | Goal | Audible proof |
 |---|---|---|
-| v0.1 | First polyphonic tone | Several safe raw notes with one shared tone control |
+| v0.1 | First 4-voice polyphonic tone | Up to four safe raw notes with one shared tone control |
 | v0.2 | Small keyboard input | A small range of notes plays polyphonically |
 | v0.3 | Basic envelope | Attack/release shape is audible per voice |
 | v0.4 | First Traveller pass | High-pass and low-pass tone shaping works across active voices |
@@ -128,7 +128,7 @@ Do not add these in v0.1:
 | v0.7 | VCO balance/tuning | VCO2 can sit above/below the main oscillator per voice |
 | v0.8 | Vibrato | Pitch movement is controllable |
 | v0.9 | Portamento / glide mode | Glide behaviour works where appropriate |
-| v1.0 | First complete polyphonic study voice | It feels recognisably 700S-inspired but playable in chords |
+| v1.0 | First complete 4-voice study synth | It feels recognisably 700S-inspired but playable in chords |
 | v1.1 | Voice allocation polish | Voice stealing, release tails, and gain safety behave cleanly |
 
 Later versions can add repeat, noise, ring-mod modes, patch saving, MIDI, and UI polish.
@@ -140,7 +140,7 @@ Later versions can add repeat, noise, ring-mod modes, patch saving, MIDI, and UI
 ```text
 user input
 → note tracking
-→ simple voice allocator
+→ fixed 4-voice allocator
 → one oscillator voice per active note
 → shared basic tone filter or per-voice basic tone filter
 → per-note simple gate
@@ -154,7 +154,7 @@ user input
 ```text
 user input
 → note tracking
-→ voice allocator
+→ 4-voice allocator
 → one complete study voice per active note
 → per-voice pitch handling
 → per-voice VCO1
@@ -178,7 +178,7 @@ Polyphony must not bypass the tone, envelope, or safety model.
 - Start Audio
 - Note buttons / small keyboard
 - Tone
-- Voice Count display or fixed voice limit
+- Fixed 4-voice status display
 
 ### Early controls
 
@@ -200,7 +200,7 @@ Polyphony must not bypass the tone, envelope, or safety model.
 - vibrato depth
 - portamento / glide time
 - repeat speed
-- voice mode / voice count if needed
+- voice mode / voice count if needed later
 
 ## Interface principle
 
@@ -229,12 +229,12 @@ Polyphony is now part of the instrument from the start.
 
 Rules:
 
-1. Keep voice count limited at first.
+1. Use a fixed 4-voice limit in v0.1.
 2. Give each note its own voice object.
 3. Use safe summed gain.
 4. Stop notes cleanly.
-5. Add proper release-tail handling before high voice counts.
-6. Add voice stealing before allowing complex playing.
+5. Keep voice allocation simple at first.
+6. Add proper release-tail handling before making voice stealing more complex.
 7. Do not redesign the instrument around lush modern pads before the raw study voice has character.
 
 Polyphony should make the instrument playable for simple chords and held intervals. It should not turn the synth into a broad preset pad machine.
@@ -243,27 +243,27 @@ Polyphony should make the instrument playable for simple chords and held interva
 
 The first audible proof is:
 
-> Several raw notes can sound together, remain stable and safe, and share one tone control.
+> Up to four raw notes can sound together, remain stable and safe, and share one tone control.
 
 Passes if:
 
 - the app starts cleanly
 - audio unlock works
-- at least three notes can sound together
+- at least four notes can sound together
 - notes start without a long delay
 - notes stop without hanging forever
 - the tone control clearly changes brightness/darkness
-- output stays safe when several notes are held
+- output stays safe when four notes are held
 - no unrelated features appear
 
 Fails if:
 
 - notes clip badly
 - notes get stuck
-- multiple notes cannot sound together
+- four notes cannot sound together
 - the tone control does nothing obvious
 - it adds unplanned features
-- it starts building the full instrument before the first polyphonic tone is proven
+- it starts building the full instrument before the first 4-voice polyphonic tone is proven
 
 ## Superpowers handoff rule
 
@@ -284,7 +284,7 @@ Do not let the agent choose the next feature by itself.
 
 Current implementation target:
 
-**Issue #2 — v0.1: First polyphonic tone**
+**Issue #2 — v0.1: First 4-voice polyphonic tone**
 
 Purpose:
 
@@ -294,7 +294,7 @@ Scope:
 
 - app loads
 - audio unlock works
-- several notes can play together
+- up to four notes can play together
 - each note has its own oscillator voice
 - one shared tone control changes brightness/darkness
 - safe summed gain
@@ -304,5 +304,6 @@ Scope:
 - no noise
 - no MIDI
 - no presets
+- no more than four voices
 
-Stop when several safe raw notes play together and the tone control works.
+Stop when four safe raw notes can play together and the tone control works.
