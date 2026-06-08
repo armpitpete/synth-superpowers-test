@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Synth Superpowers Test</title>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="panel" aria-labelledby="title">
+        <p class="eyebrow">v0.1 test synth</p>
+        <h1 id="title">Synth Superpowers Test</h1>
+        <p class="intro">
+          A tiny Web Audio synth used to test whether a coding-agent workflow can build synth features without drifting.
+        </p>
+
+        <div class="controls" aria-label="Synth controls">
+          <button id="audio-toggle" type="button">Start audio</button>
+          <button id="note-button" type="button" disabled>Hold note</button>
+        </div>
+
+        <p id="status" class="status" role="status">Audio is locked.</p>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
