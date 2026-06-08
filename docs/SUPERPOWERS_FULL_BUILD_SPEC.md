@@ -60,21 +60,6 @@ The finished app must provide:
 - no sequencer required
 - no plugin export required
 
-## Non-goals
-
-Do not build:
-
-- a visual clone of the original hardware
-- a branded Korg product
-- a full workstation synth
-- a modulation matrix
-- a DAW-style plugin UI
-- a preset marketplace
-- a sample player
-- a sequencer
-- an arpeggiator unless everything else is done and stable
-- more than 4 voices in this first complete build
-
 ## Overall sound target
 
 The sound should feel:
