@@ -16,29 +16,35 @@ Do not use Korg, miniKORG, or 700S as the final product name unless the project 
 
 ## Design goal
 
-Build a compact monophonic browser synth that captures the core experience of a 700S-style instrument:
+Build a compact monophonic-first browser synth that captures the core experience of a 700S-style instrument, then later extends it with controlled polyphony once the single voice is working.
 
-- immediate monophonic playing
+Core experience:
+
+- immediate monophonic playing first
 - simple controls
 - raw oscillator tone
 - useful lead and bass sounds
 - quirky tone shaping
 - dual high-pass / low-pass Traveller-style filtering
 - second oscillator and effect modes later
+- planned polyphonic mode after the core voice works
 - no preset-first workflow
 - no broad workstation behaviour
 
 The first goal is not perfect emulation. The first goal is to build the architecture in the right order.
+
+Polyphony is a project extension, not part of the original-study accuracy target. It must be added only after the single voice is stable and characterful.
 
 ## Design rules
 
 1. Build the voice before building the interface fully.
 2. Add one feature at a time.
 3. Keep the instrument monophonic until the core sound works.
-4. Avoid modern synth bloat.
-5. Do not add presets until the instrument has a character worth saving.
-6. Every version must have one audible proof.
-7. Tests prove the app works. Listening decides whether the sound belongs.
+4. Add polyphony only as an explicit later version with clear voice allocation rules.
+5. Avoid modern synth bloat.
+6. Do not add presets until the instrument has a character worth saving.
+7. Every version must have one audible proof.
+8. Tests prove the app works. Listening decides whether the sound belongs.
 
 ## Reference behaviour to study
 
@@ -55,6 +61,10 @@ The original-inspired design is based on these behaviours:
 - portamento
 - vibrato
 - repeat / retrigger behaviour
+
+Project-specific extension:
+
+- controlled polyphony later, by duplicating the completed single voice per note rather than redesigning the synth as a modern workstation
 
 ## What we will implement first
 
@@ -94,7 +104,7 @@ Do not add these in v0.1:
 - MIDI
 - presets
 - sequencer
-- polyphony
+- polyphony / voice allocation
 - arpeggiator
 - reverb
 - plugin export
@@ -113,7 +123,9 @@ Do not add these in v0.1:
 | v0.7 | VCO balance/tuning | VCO2 can sit above/below the main oscillator |
 | v0.8 | Vibrato | Pitch movement is controllable |
 | v0.9 | Portamento | Notes glide when played legato |
-| v1.0 | First complete study voice | It feels recognisably 700S-inspired |
+| v1.0 | First complete mono study voice | It feels recognisably 700S-inspired |
+| v1.1 | Polyphonic voice allocation | Several notes can play using the completed voice design |
+| v1.2 | Polyphonic behaviour polish | Voice stealing, release tails, and gain safety behave cleanly |
 
 Later versions can add repeat, noise, ring-mod modes, patch saving, MIDI, and UI polish.
 
@@ -131,7 +143,7 @@ user input
 → output
 ```
 
-### Target path after staged build
+### Target mono path after staged build
 
 ```text
 user input
@@ -147,6 +159,21 @@ user input
 → master safety gain
 → output
 ```
+
+### Target polyphonic path after mono voice completion
+
+```text
+user input
+→ note tracking
+→ voice allocator
+→ one complete study voice per active note
+→ per-voice envelope and release handling
+→ summed voice bus
+→ master safety limiter / gain control
+→ output
+```
+
+Polyphony must reuse the completed voice architecture. It must not bypass the tone, envelope, or safety model.
 
 ## Controls map
 
@@ -177,6 +204,13 @@ user input
 - portamento time
 - repeat speed
 
+### Polyphony controls later
+
+- Voice Mode: Mono / Poly
+- Voice Count
+- Voice Steal Mode
+- Poly Gain Safety
+
 ## Interface principle
 
 The interface should feel like a small performance instrument, not a software control panel.
@@ -195,6 +229,22 @@ Avoid:
 - rack-style complexity
 - DAW-plugin overload
 - visual copying of the original hardware
+- turning polyphony into a workstation-style feature set
+
+## Polyphony principle
+
+Polyphony is allowed, but it must be added late and carefully.
+
+Rules:
+
+1. Build one good mono voice first.
+2. Duplicate that voice for polyphony only after v1.0.
+3. Keep polyphony limited and controlled.
+4. Add voice stealing before high voice counts.
+5. Add gain safety before allowing stacked notes to get loud.
+6. Do not redesign the instrument around chords before the mono voice has character.
+
+Polyphony should make the instrument playable for simple chords and held intervals. It should not turn the synth into a broad preset pad machine.
 
 ## First audible proof
 
@@ -257,5 +307,6 @@ Scope:
 - no noise
 - no MIDI
 - no presets
+- no polyphony
 
 Stop when one safe raw note plays and the tone control works.
