@@ -4,9 +4,14 @@
 
 This is the full build instruction for Superpowers or another coding agent.
 
-The goal is to complete a working browser synth from scratch, not to stop at a tiny first proof.
+The goal is to complete a working synth from scratch as both:
 
-The synth is a new original 4-voice polyphonic browser instrument inspired by the MiniKorg 700S signal flow and playing character.
+- a VST plugin
+- a standalone desktop application
+
+This is not a browser app and must not be delivered as a web page.
+
+The synth is a new original 4-voice polyphonic instrument inspired by the MiniKorg 700S signal flow and playing character.
 
 This is an educational / study recreation target. It is not a branded commercial clone.
 
@@ -16,8 +21,6 @@ Use this internal name while building:
 
 **700S Study Synth**
 
-Do not use Korg, miniKORG, or 700S as the final public product name unless this remains a private/internal study project.
-
 ## Core user decision
 
 The user wants:
@@ -26,19 +29,40 @@ The user wants:
 - MiniKorg 700S-inspired architecture and character
 - polyphony from the start
 - fixed 4-voice polyphony for the first complete build
+- a VST plugin build
+- a standalone desktop app build
 - Superpowers to complete the build from a full spec, not only one tiny issue
+
+## Target formats
+
+Build both targets from the same synth engine:
+
+1. **VST plugin**
+   - Treat VST as VST3 unless the user later says otherwise.
+   - The plugin should load in a DAW that supports VST3.
+
+2. **Standalone desktop app**
+   - The standalone app should run without opening a browser.
+   - It should expose the same synth engine and controls as the plugin.
+
+Preferred implementation approach:
+
+- Use a real audio-plugin framework if practical.
+- JUCE with CMake is acceptable and likely suitable.
+- Another framework is acceptable only if it can produce both a VST plugin and a standalone desktop app cleanly.
+
+The existing Vite/browser scaffold may be replaced if it does not suit the VST/standalone target.
 
 ## Completion target
 
 Build a complete first usable version of the synth.
 
-The finished app must provide:
+The finished instrument must provide:
 
 - 4-voice polyphonic playing
-- browser-based Web Audio synth engine
-- small playable keyboard or note buttons
-- computer keyboard input if practical
-- audio unlock/start button
+- shared synth engine used by both plugin and standalone app
+- playable notes through the plugin host and/or standalone app
+- computer keyboard input in standalone mode if practical
 - one oscillator per voice at minimum
 - selectable main oscillator waveform
 - shared tone control
@@ -55,10 +79,6 @@ The finished app must provide:
 - fixed 4-voice limit
 - stuck-note prevention
 - simple clear UI
-- no preset browser required
-- no MIDI required
-- no sequencer required
-- no plugin export required
 
 ## Overall sound target
 
@@ -78,10 +98,28 @@ Do not over-smooth it into a modern soft pad machine.
 
 ## Architecture target
 
+### Shared synth engine
+
+The plugin and standalone app must use the same underlying synth engine.
+
+Keep the audio engine separate from UI code.
+
+Suggested architecture:
+
+```text
+shared synth engine
+→ 4-voice allocator
+→ per-voice oscillator/envelope/filter processing
+→ summed voice bus
+→ master safety gain
+→ plugin wrapper
+→ standalone wrapper
+```
+
 ### Full signal path
 
 ```text
-user input
+note input
 → note tracking
 → fixed 4-voice allocator
 → per-voice pitch handling
@@ -95,7 +133,7 @@ user input
 → vibrato/modulation where enabled
 → summed voice bus
 → master gain safety
-→ output
+→ audio output
 ```
 
 The implementation may place filters per voice or after the voice bus, but the behaviour must be musically coherent and safe. If uncertain, choose the simpler safe implementation and document the decision.
@@ -123,23 +161,22 @@ Voice allocation rules:
 - use a simple voice stealing rule if needed
 - oldest active voice stealing is acceptable for the first complete build
 - release tails should not hang forever
-- all notes must stop on pointer/key release
-- add an all-notes-off panic button or internal safety if practical
+- all notes must stop on note-off
+- add an all-notes-off panic control or internal safety if practical
 
 ## Controls required
 
-### Basic app controls
+### Basic app/plugin controls
 
-- Start Audio
-- Panic / All Notes Off if practical
 - Master Volume or safe fixed output level
-- active voice count display or status text
+- Panic / All Notes Off if practical
+- active voice count display or status text if practical
 
-### Play controls
+### Play/input behaviour
 
-- small on-screen keyboard or note buttons
-- at least enough notes for simple intervals and chords
-- computer keyboard mapping if practical
+- MIDI note input for the VST plugin
+- playable input for standalone mode
+- computer keyboard mapping in standalone mode if practical
 
 ### Oscillator controls
 
@@ -197,48 +234,49 @@ Use:
 
 Suggested sections:
 
-1. Play
+1. Play / Status
 2. Oscillators
 3. Traveller / Tone
 4. Envelope
 5. Performance
-6. Output / Status
+6. Output
 
-Avoid:
-
-- dense modular UI
-- small unreadable controls
-- decorative hardware-copy interface
-- fake screws / labels / brand cloning
+Avoid making the UI look like a browser demo. It should feel like an instrument/plugin interface.
 
 ## Technical requirements
 
-Use a simple browser app stack already present or easy to run.
+The target is no longer a browser/Vite app.
 
-Current repo direction uses Vite.
+Use a stack that can build:
 
-The final build should include:
+- VST plugin
+- standalone desktop app
 
-- `index.html`
-- `package.json`
-- `src/main.js`
-- `src/audio-engine.js`
-- `src/styles.css`
-- `scripts/check.js`
-- any additional small modules if useful
-
-Keep code readable and split by responsibility.
-
-Preferred structure:
+Preferred structure if using JUCE/CMake:
 
 ```text
-src/main.js              UI wiring and event handling
-src/audio-engine.js      audio context, voices, controls, safety
-src/styles.css           UI styling
-scripts/check.js         repository sanity checks
+CMakeLists.txt
+Source/
+  PluginProcessor.h
+  PluginProcessor.cpp
+  PluginEditor.h
+  PluginEditor.cpp
+  SynthEngine.h
+  SynthEngine.cpp
+  Voice.h
+  Voice.cpp
+  Parameters.h
+  Parameters.cpp
+README.md
 ```
 
-Additional modules are allowed if the code becomes clearer, but do not over-engineer.
+Equivalent structure is acceptable if another framework is chosen.
+
+Keep code readable and split by responsibility:
+
+- synth engine separate from UI
+- voice handling separate from parameter/UI code
+- plugin and standalone targets share the same engine
 
 ## Safety requirements
 
@@ -252,29 +290,31 @@ Required:
 - no permanent stuck notes
 - fixed 4-voice limit
 - cleanup stopped voices
-- tone/effect controls must not produce extreme volume jumps
+- controls must not produce extreme volume jumps
 - four held notes must stay at a safe level
 
 If adding distortion/ring-mod/noise, reduce gain or add safety limiting.
 
 ## Build/check requirements
 
-At minimum:
+Superpowers must define and document the build commands it uses.
 
-- `npm install` works
-- `npm run dev` starts the app
-- `npm run build` succeeds
-- `npm run check` succeeds
+At minimum, the final report must include:
 
-`scripts/check.js` should verify basic project structure and fail if key files are missing.
+- how to build the VST plugin
+- how to build the standalone app
+- where the built outputs are located
+- which commands were run
+- whether the build passed
+- known limitations
 
-It does not need to prove audio quality.
+If the local environment cannot build VSTs because required tooling is missing, Superpowers must still create the correct project structure and explain the missing dependency clearly.
 
 ## Manual listening test
 
 The coding agent cannot approve final sound quality.
 
-It must report when the app is ready for human listening.
+It must report when the plugin/app is ready for human listening.
 
 Manual listening pass:
 
@@ -288,23 +328,26 @@ Manual listening pass:
 - portamento behaves sensibly if included
 - no obvious clipping
 - no stuck notes
+- standalone app opens without a browser
+- VST plugin is produced or the blocker is clearly documented
 
 ## Acceptance criteria
 
 The build is complete when:
 
-- the browser app runs locally
+- a standalone desktop app target exists
+- a VST plugin target exists
+- both targets share the same synth engine
 - the synth plays up to 4 notes at once
 - note start/stop works reliably
 - all required controls are present and connected
-- the tone/traveller controls audibly change the sound
-- the envelope controls audibly shape notes
+- tone/traveller controls audibly change the sound
+- envelope controls audibly shape notes
 - VCO2 can be enabled and adjusted
 - vibrato works
 - portamento/glide works or is clearly deferred with explanation
 - output remains safe with 4 notes held
-- `npm run build` passes
-- `npm run check` passes
+- build commands are documented
 - changed files are reported
 - known limitations are listed
 
@@ -319,25 +362,26 @@ Expected working method:
 1. Read this full build spec.
 2. Inspect the repo.
 3. Make a complete implementation plan.
-4. Build the app in controlled steps.
-5. Run checks repeatedly.
+4. Build the VST/standalone project in controlled steps.
+5. Run checks/builds repeatedly where possible.
 6. Keep scope aligned with this document.
-7. Report final status, files changed, tests run, and known limitations.
+7. Report final status, files changed, commands run, build outputs, and known limitations.
 
 Do not ask the user to approve every tiny internal step unless there is a real design ambiguity or technical blocker.
 
 ## Current user decisions that must not be overridden
 
+- Not a browser app.
+- VST plugin and standalone app.
 - Polyphonic now.
 - Fixed 4 voices.
 - Full Superpowers build, not only v0.1.
 - MiniKorg 700S-inspired study synth.
 - New synth from scratch.
 - Keep the UI simple.
-- Do not turn it into a generic workstation synth.
 
 ## Good final result
 
-A user can open the app, start audio, play up to four notes, shape the tone, hear a clear 700S-inspired subtractive character, adjust envelope/performance controls, and avoid clipping or stuck notes.
+A user can open the standalone app or load the VST plugin, play up to four notes, shape the tone, hear a clear 700S-inspired subtractive character, adjust envelope/performance controls, and avoid clipping or stuck notes.
 
 That is the completion target for Superpowers.
